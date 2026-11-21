@@ -1,0 +1,325 @@
+/* PreviewTrainingPlanPage.css — màn "Preview workout plan" (bước sau khi lưu lịch).
+   Dùng cùng bảng màu với MemberSchedulePage.css để hai màn liền mạch. */
+
+.preview-page {
+  --panel: #150f33;
+  --panel-border: #2a2150;
+  --head-row: #1b1340;
+  --text-muted: #b7ace0;
+  --text-dim: #8c80c0;
+  --health: #5fbf80;
+  --health-bg: #14302f;
+  --skill: #8b6ceb;
+  --skill-bg: #261c58;
+  --today: #6c2fd6;
+
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 1080px;
+  padding-bottom: 1.5rem;
+  color: #fff;
+  font-family: "Inter", "Roboto", "Helvetica", "Arial", sans-serif;
+}
+
+.preview-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 320px;
+  color: #c9bff0;
+  font-size: 14px;
+}
+
+.preview-head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.preview-title {
+  margin: 0;
+  font-size: 26px;
+  line-height: 1.2;
+  font-weight: 700;
+}
+
+.preview-subtitle {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.preview-alert {
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(224, 122, 181, 0.12);
+  border: 1px solid #e07ab5;
+  color: #f6c7e0;
+  font-size: 13px;
+}
+
+/* plan info */
+.preview-card {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 14px;
+  padding: 18px 20px;
+}
+
+.preview-card__title {
+  margin: 0 0 16px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.preview-plan-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+}
+
+.preview-plan-grid__label {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+
+.preview-plan-grid__value {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* week board */
+.preview-week {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.preview-week__head {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  background: var(--head-row);
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.preview-day-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 10px 6px;
+  border-right: 1px solid var(--panel-border);
+}
+
+.preview-day-head:last-child {
+  border-right: none;
+}
+
+.preview-day-head__date {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.preview-day-head__name {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.preview-day-head__date,
+.preview-day-head__name {
+  padding: 0 6px;
+  border-radius: 4px;
+}
+
+.preview-day-head.is-today .preview-day-head__date {
+  background: var(--today);
+  color: #fff;
+}
+
+.preview-week__body {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  min-height: 220px;
+}
+
+.preview-day-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 8px;
+  border-right: 1px solid var(--panel-border);
+  background: #0f0a24;
+}
+
+.preview-day-cell:last-child {
+  border-right: none;
+}
+
+.preview-day-cell.is-today {
+  background: rgba(108, 79, 230, 0.16);
+}
+
+.preview-workout {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 9px 8px 11px;
+  border-radius: 8px;
+  border-left: 3px solid transparent;
+}
+
+.preview-workout--health {
+  background: var(--health-bg);
+  border-left-color: var(--health);
+}
+
+.preview-workout--skill {
+  background: var(--skill-bg);
+  border-left-color: var(--skill);
+}
+
+.preview-workout--empty {
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed #2f2560;
+  border-left: 1px dashed #2f2560;
+  background: transparent;
+  color: #6e648b;
+  font-size: 11px;
+}
+
+.preview-workout__badge {
+  align-self: flex-start;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 9.5px;
+  font-weight: 500;
+}
+
+.preview-workout__badge--health {
+  background: rgba(95, 191, 128, 0.16);
+  color: #86e3a0;
+}
+
+.preview-workout__badge--skill {
+  background: rgba(139, 108, 235, 0.2);
+  color: #c9bff0;
+}
+
+.preview-workout__name {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.preview-workout__meta {
+  margin: 0;
+  font-size: 10.5px;
+  color: var(--text-muted);
+}
+
+.preview-workout__meta--dim {
+  color: var(--text-dim);
+}
+
+/* Danh sách bài tập trong buổi tập của ngày. */
+.preview-exercises {
+  margin: 6px 0 0;
+  padding: 6px 0 0;
+  list-style: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.preview-exercise {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.preview-exercise__name {
+  font-size: 11px;
+  line-height: 1.35;
+  color: #e6e0ff;
+  font-weight: 500;
+}
+
+.preview-exercise__detail {
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+/* footer */
+.preview-summary {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.preview-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.preview-back {
+  height: 38px;
+  padding: 0 22px;
+  background: #1e1646;
+  border: 1px solid #3a2f70;
+  border-radius: 999px;
+  color: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.preview-back:hover {
+  background: #271d59;
+}
+
+.preview-go {
+  height: 38px;
+  padding: 0 32px;
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #7c3aed 0%, #c13fd0 60%, #e07ab5 100%);
+  color: #fff;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+
+.preview-go:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.preview-go:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 900px) {
+  .preview-week {
+    overflow-x: auto;
+  }
+
+  .preview-week__head,
+  .preview-week__body {
+    min-width: 720px;
+  }
+}

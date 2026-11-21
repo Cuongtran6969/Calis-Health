@@ -1,0 +1,377 @@
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams, Navigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { toast } from "react-toastify";
+import { getLibraryOverview } from "../api/library";
+import { isGuestSession, loginPath } from "../utils/authState";
+import "./Library.css";
+
+// Icons
+function PlayIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M8 5.14v13.72a1 1 0 0 0 1.54.84l11-6.86a1 1 0 0 0 0-1.68l-11-6.86A1 1 0 0 0 8 5.14z" />
+    </svg>
+  );
+}
+
+function ListIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M4 6h2v2H4zm0 5h2v2H4zm0 5h2v2H4zm4-10h14v2H8zm0 5h14v2H8zm0 5h14v2H8z" />
+    </svg>
+  );
+}
+
+function ArrowRightIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+      <path
+        fillRule="evenodd"
+        d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z"
+        clipRule="evenodd"
+      />
+    </svg>
+  );
+}
+
+/** Ngôi sao — dùng cho nút mở màn Favorites. */
+function StarIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+    </svg>
+  );
+}
+
+export default function Library() {
+  const navigate = useNavigate();
+  const { t } = useTranslation();
+  const [searchParams] = useSearchParams();
+  const queryType = searchParams.get("type");
+
+  // Hooks phải được gọi theo đúng thứ tự mọi lần render -> không được return
+  // sớm trước khi khai báo hết useState/useEffect.
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [counts, setCounts] = useState({
+    exercise: {
+      healthCount: 0,
+      skillCount: 0,
+      memberCount: 0,
+    },
+    workout: {
+      healthCount: 0,
+      skillCount: 0,
+      customCount: 0,
+    },
+  });
+
+  const fetchData = async () => {
+    setLoading(true);
+    setError(null);
+    const [overviewResult] = await Promise.allSettled([getLibraryOverview()]);
+
+    const overview = overviewResult.status === "fulfilled" ? overviewResult.value : null;
+
+    if (overviewResult.status === "rejected") {
+      console.error("Failed to load library summary:", overviewResult.reason);
+      setError(t("member.library.loadError"));
+    }
+
+    setCounts({
+      exercise: {
+        healthCount: Number(overview?.healthExercisesCount || 0),
+        skillCount: Number(overview?.skillExercisesCount || 0),
+        memberCount: Number(overview?.memberExercisesCount || 0),
+      },
+      workout: {
+        healthCount: Number(overview?.healthWorkoutsCount || 0),
+        skillCount: Number(overview?.skillWorkoutsCount || 0),
+        customCount: Number(overview?.customWorkoutsCount || 0),
+      },
+    });
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    if (queryType) {
+      return undefined;
+    }
+    fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queryType]);
+
+  // Chuyển hướng tới tab bài tập tương ứng khi vào /library?type=...
+  if (queryType) {
+    return <Navigate to={`/library/exercises?type=${queryType}`} replace />;
+  }
+
+  const handleNavigate = (path) => {
+    navigate(path);
+  };
+
+  // ── GUEST (chưa đăng nhập) ──────────────────────────────────────────────
+  // Guest được xem các trang danh sách của nội dung HỆ THỐNG
+  // (Exercise for health / skill, Workout for health / skill).
+  // Riêng các mục do Member tạo (bài tập cá nhân, workout tuỳ chỉnh) và
+  // mục Favorites thì bị chặn và mời đăng nhập.
+  const isGuest = isGuestSession();
+
+  const requireMember = (path) => {
+    if (!isGuest) {
+      navigate(path);
+      return;
+    }
+    toast.info(t("member.library.loginRequiredDetail"));
+    navigate(loginPath(path));
+  };
+
+  return (
+    <div className="library-container">
+      {/* 2. Tiêu đề trang */}
+      <header className="library-header">
+        <div>
+          <h1 className="library-title">{t("member.library.pageTitle")}</h1>
+          <p className="library-description">{t("member.library.pageDescription")}</p>
+        </div>
+        {!isGuest && (
+          <button
+            type="button"
+            className="library-favorites-link"
+            onClick={() => handleNavigate("/library/favorites")}
+          >
+            <StarIcon />
+            <span>{t("member.favorites.title")}</span>
+          </button>
+        )}
+      </header>
+
+      {/* Error state alert */}
+      {error && (
+        <div className="library-error-banner" role="alert">
+          <span>{error}</span>
+          <button className="library-retry-btn" onClick={fetchData}>
+            {t("common.retry")}
+          </button>
+        </div>
+      )}
+
+      {/* 3. Section 1: Exercise (Bài tập) */}
+      <section className="library-section">
+        <h2 className="section-title">{t("member.library.exerciseSection")}</h2>
+
+        <div className="section-grid">
+          {/* Sub-header row: System exercise (span 2) and Member provided exercise (span 1) */}
+          <div className="group-label group-label-system">{t("member.library.systemExercise")}</div>
+          <div className="group-label group-label-member">{t("member.library.memberProvidedExercise")}</div>
+
+          {/* Card 1: Exercise for health */}
+          <div className="library-card card-system-1">
+            <div className="card-body">
+              <div className="card-icon-badge play-icon">
+                <PlayIcon />
+              </div>
+              <div className="card-title-row">
+                <h3 className="card-title">{t("member.library.exerciseForHealth")}</h3>
+                {loading ? (
+                  <div className="skeleton-pulse skeleton-text-count" />
+                ) : (
+                  <span className="card-count">
+                    {t("member.library.exerciseCount", { count: counts.exercise.healthCount })}
+                  </span>
+                )}
+              </div>
+              <p className="card-description">
+                {t("member.library.exerciseForHealthDesc")}
+              </p>
+            </div>
+            <div className="card-footer">
+              <button
+                type="button"
+                className="card-view-btn"
+                onClick={() =>
+                  handleNavigate("/library/exercises?type=health")
+                }
+              >
+                <span>{t("member.library.viewList")}</span>
+                <ArrowRightIcon />
+              </button>
+            </div>
+          </div>
+
+          {/* Card 2: Exercise for skill */}
+          <div className="library-card card-system-2">
+            <div className="card-body">
+              <div className="card-icon-badge play-icon">
+                <PlayIcon />
+              </div>
+              <div className="card-title-row">
+                <h3 className="card-title">{t("member.library.exerciseForSkill")}</h3>
+                {loading ? (
+                  <div className="skeleton-pulse skeleton-text-count" />
+                ) : (
+                  <span className="card-count">
+                    {t("member.library.exerciseCount", { count: counts.exercise.skillCount })}
+                  </span>
+                )}
+              </div>
+              <p className="card-description">
+                {t("member.library.exerciseForSkillDesc")}
+              </p>
+            </div>
+            <div className="card-footer">
+              <button
+                type="button"
+                className="card-view-btn"
+                onClick={() =>
+                  handleNavigate("/library/exercises?type=skill")
+                }
+              >
+                <span>{t("member.library.viewList")}</span>
+                <ArrowRightIcon />
+              </button>
+            </div>
+          </div>
+
+          {/* Card 3: Member provided exercise */}
+          <div className="library-card card-member">
+            <div className="card-body">
+              <div className="card-icon-badge play-icon">
+                <PlayIcon />
+              </div>
+              <div className="card-title-row">
+                <h3 className="card-title">{t("member.library.memberProvidedExercise")}</h3>
+                {loading ? (
+                  <div className="skeleton-pulse skeleton-text-count" />
+                ) : (
+                  <span className="card-count">
+                    {t("member.library.exerciseCount", { count: counts.exercise.memberCount })}
+                  </span>
+                )}
+              </div>
+              <p className="card-description">{t("member.library.memberProvidedDesc")}</p>
+            </div>
+            <div className="card-footer">
+              <button
+                type="button"
+                className="card-view-btn"
+                onClick={() => requireMember("/library/community")}
+              >
+                <span>{t("member.library.viewList")}</span>
+                <ArrowRightIcon />
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 4. Section 2: Workout (Giáo án/Buổi tập) */}
+      <section className="library-section">
+        <h2 className="section-title">{t("member.library.workoutSection")}</h2>
+
+        <div className="section-grid">
+          {/* Sub-header row: System workout (span 2) and Custom workout (span 1) */}
+          <div className="group-label group-label-system">{t("member.library.systemWorkout")}</div>
+          <div className="group-label group-label-member">{t("member.library.customWorkout")}</div>
+
+          {/* Card 1: Workout for health */}
+          <div className="library-card card-system-1">
+            <div className="card-body">
+              <div className="card-icon-badge list-icon">
+                <ListIcon />
+              </div>
+              <div className="card-title-row">
+                <h3 className="card-title">{t("member.library.workoutForHealth")}</h3>
+                {loading ? (
+                  <div className="skeleton-pulse skeleton-text-count" />
+                ) : (
+                  <span className="card-count">
+                    {t("member.library.workoutCount", { count: counts.workout.healthCount })}
+                  </span>
+                )}
+              </div>
+              <p className="card-description">
+                {t("member.library.workoutForHealthDesc")}
+              </p>
+            </div>
+            <div className="card-footer">
+              <button
+                type="button"
+                className="card-view-btn"
+                onClick={() => handleNavigate("/library/workouts/system?type=health")}
+              >
+                <span>{t("member.library.viewList")}</span>
+                <ArrowRightIcon />
+              </button>
+            </div>
+          </div>
+
+          {/* Card 2: Workout for skill */}
+          <div className="library-card card-system-2">
+            <div className="card-body">
+              <div className="card-icon-badge list-icon">
+                <ListIcon />
+              </div>
+              <div className="card-title-row">
+                <h3 className="card-title">{t("member.library.workoutForSkill")}</h3>
+                {loading ? (
+                  <div className="skeleton-pulse skeleton-text-count" />
+                ) : (
+                  <span className="card-count">
+                    {t("member.library.workoutCount", { count: counts.workout.skillCount })}
+                  </span>
+                )}
+              </div>
+              <p className="card-description">
+                {t("member.library.workoutForSkillDesc")}
+              </p>
+            </div>
+            <div className="card-footer">
+              <button
+                type="button"
+                className="card-view-btn"
+                onClick={() => handleNavigate("/library/workouts/system?type=skills")}
+              >
+                <span>{t("member.library.viewList")}</span>
+                <ArrowRightIcon />
+              </button>
+            </div>
+          </div>
+
+          {/* Card 3: Custom workout */}
+          <div className="library-card card-member">
+            <div className="card-body">
+              <div className="card-icon-badge list-icon">
+                <ListIcon />
+              </div>
+              <div className="card-title-row">
+                <h3 className="card-title">{t("member.library.customWorkout")}</h3>
+                {loading ? (
+                  <div className="skeleton-pulse skeleton-text-count" />
+                ) : (
+                  <span className="card-count">
+                    {t("member.library.workoutCount", { count: counts.workout.customCount })}
+                  </span>
+                )}
+              </div>
+              <p className="card-description">
+                {t("member.library.customWorkoutDesc")}
+              </p>
+            </div>
+            <div className="card-footer">
+              <button
+                type="button"
+                className="card-view-btn"
+                onClick={() => requireMember("/library/custom")}
+              >
+                <span>{t("member.library.viewList")}</span>
+                <ArrowRightIcon />
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}

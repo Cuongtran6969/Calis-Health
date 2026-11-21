@@ -1,0 +1,135 @@
+package com.calishealth.models;
+
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.hibernate.annotations.Formula;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+@Entity
+@Table(name = "workout_entries")
+@Getter
+@Setter
+@NoArgsConstructor
+public class WorkoutEntry {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false, unique = true, length = 30)
+    private String code;
+
+    @Column(nullable = false, length = 120)
+    private String name;
+
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
+    @Column(length = 40)
+    private String type = "WORKOUT";
+
+    @Column(nullable = false, length = 20)
+    private String source = "SYSTEM";
+
+    @Column(nullable = false, length = 30)
+    private String level;
+
+    @Column(name = "is_shared_with_community", nullable = false)
+    private boolean sharedWithCommunity;
+
+    /** Trạng thái duyệt nội dung: ACTIVE (đã duyệt) / PENDING / REJECTED. */
+    @Column(name = "moderation_status", nullable = false, length = 20)
+    private String moderationStatus = "ACTIVE";
+
+    /**
+     * Số lượt yêu thích (lưu) của workout này, tính TRỰC TIẾP từ `member_favorites`.
+     *
+     * <p>Trước V83 đây là cột vật lý `workout_entries.save_count` bị ghi đè nên lệch với
+     * thực tế. V83 bỏ cột; giờ số đếm lấy thẳng từ nguồn sự thật.
+     */
+    @Formula("(select count(*) from member_favorites mf where mf.item_id = {alias}.id "
+            + "and mf.item_type in ('SYSTEM_WORKOUT', 'MEMBER_WORKOUT'))")
+    private Integer saveCount = 0;
+
+    @Column(name = "total_sets", nullable = false)
+    private Integer totalSets = 0;
+
+    @Column(name = "estimated_duration", nullable = false)
+    private Integer estimatedDuration = 0;
+
+    @Column(name = "days_per_week", nullable = false)
+    private int daysPerWeek = 3;
+
+    /** Thứ tự ngày tập trong tuần của workout (Day 1..N). */
+    @Column(name = "day_sequence", nullable = false)
+    private int daySequence = 1;
+
+    /** Trạng thái publish của template: DRAFT / PUBLISHED / ARCHIVED. */
+    @Column(name = "template_status", nullable = false, length = 20)
+    private String templateStatus = "DRAFT";
+
+    /** Template đang publish (nguồn sự thật duy nhất, thay cho cột active trùng lặp trước đây). */
+    public boolean isActive() {
+        return "PUBLISHED".equalsIgnoreCase(templateStatus);
+    }
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by")
+    private User createdBy;
+
+    /** Bài tập theo thứ tự hiển thị, mỗi bài có count by / sets / reps hoặc duration / rest riêng. */
+    @ElementCollection
+    @CollectionTable(name = "workout_exercises", joinColumns = @JoinColumn(name = "workout_id"))
+    @OrderColumn(name = "display_order")
+    private List<WorkoutExerciseItem> exercises = new ArrayList<>();
+
+    @OneToMany(mappedBy = "workout", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("dayOfWeek ASC, id ASC")
+    private List<WorkoutPlanItem> planItems = new ArrayList<>();
+
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    @PreUpdate
+    void updateTimestamp() {
+        updatedAt = LocalDateTime.now();
+        if (createdAt == null) {
+            createdAt = updatedAt;
+        }
+        if (totalSets == null) {
+            totalSets = 0;
+        }
+        if (estimatedDuration == null) {
+            estimatedDuration = 0;
+        }
+        if (source == null || source.isBlank()) {
+            source = "SYSTEM";
+        } else if ("MEMBER".equalsIgnoreCase(source)) {
+            source = "CUSTOM";
+        }
+    }
+
+    public boolean isSystem() {
+        return "SYSTEM".equalsIgnoreCase(source);
+    }
+
+    public void setSystem(boolean system) {
+        source = system ? "SYSTEM" : "CUSTOM";
+    }
+
+    public Long getAuthorId() {
+        return createdBy == null ? null : createdBy.getId();
+    }
+
+    public User getAuthor() {
+        return createdBy;
+    }
+}

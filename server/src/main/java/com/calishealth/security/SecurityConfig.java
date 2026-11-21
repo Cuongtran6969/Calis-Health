@@ -1,0 +1,123 @@
+package com.calishealth.security;
+
+import com.calishealth.service.MaintenanceScheduleService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
+
+@Configuration
+@EnableWebSecurity
+@EnableMethodSecurity
+@RequiredArgsConstructor
+public class SecurityConfig {
+    private final JwtAuthFilter jwtAuthFilter;
+    private final MaintenanceScheduleService maintenanceSchedules;
+
+    // CORS origins, đổi qua env CORS_ALLOWED_ORIGINS (phân cách bằng dấu phẩy)
+    @Value("${app.cors.allowed-origins:http://localhost:*,http://127.0.0.1:*}")
+    private List<String> allowedOrigins;
+
+    @Bean
+    SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http.csrf(csrf -> csrf.disable())
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(a -> a
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        // lỗi chưa có handler được Spring chuyển sang /error: không mở thì mọi lỗi thành 401 (FE tự logout)
+                        .requestMatchers("/error").permitAll()
+                        // Chỉ mở health để team kiểm tra backend đã sống chưa (GET /actuator/health).
+                        // Các endpoint actuator khác (env, beans, loggers...) vẫn yêu cầu đăng nhập.
+                        .requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/health/**").permitAll()
+                        .requestMatchers("/api/auth/change-password", "/api/auth/me").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/dashboard").permitAll()
+                        .requestMatchers(
+                            "/api/auth/**",
+                            "/swagger-ui.html",
+                            "/swagger-ui/**",
+                            "/v3/api-docs",
+                            "/v3/api-docs/**",
+                            "/webjars/**"
+                        ).permitAll()
+                        .requestMatchers("/media/exercise-demos/**").permitAll()
+                        .requestMatchers("/media/exercise-anatomy/**").permitAll()
+                        .requestMatchers("/api/public/library/**").permitAll()
+                        .requestMatchers("/api/public/maintenance/**").permitAll()
+                        // Profile photos are rendered by <img>, which cannot send the JWT header.
+                        .requestMatchers(HttpMethod.GET, "/media/profile-avatars/**").permitAll()
+                        // Survey Management now belongs to the Admin area (must stay before /api/content/**).
+                        .requestMatchers("/api/content/surveys/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/content/**").hasRole("CONTENT_MANAGER")
+                        .requestMatchers("/api/content/**").hasRole("CONTENT_MANAGER")
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        // ── Library công khai: GUEST (chưa đăng nhập) được xem danh sách
+                        // bài tập / workout hệ thống. Các endpoint chi tiết bên dưới vẫn
+                        // yêu cầu MEMBER — frontend chặn trước và mời đăng nhập.
+                        .requestMatchers(HttpMethod.GET, "/api/v1/library/exercises").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/library/system-workouts").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/library/overview").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/library/muscle-groups").permitAll()
+                        .requestMatchers("/api/v1/library/exercises/**").hasRole("MEMBER")
+                        .requestMatchers("/api/v1/library/system-workouts/**").hasRole("MEMBER")
+                        .requestMatchers("/api/v1/library/favorites/**").hasRole("MEMBER")
+                        .requestMatchers("/api/v1/library/feedback/**").hasRole("MEMBER")
+                        .requestMatchers("/api/v1/library/exercise-tree/**").hasAnyRole("MEMBER", "CONTENT_MANAGER")
+                        .requestMatchers("/api/v1/library/member-exercises/**").hasRole("MEMBER")
+                        .requestMatchers("/api/v1/library/personal-exercises/**").authenticated()
+                        .requestMatchers("/api/v1/library/custom-workouts/**").hasRole("MEMBER")
+                        .requestMatchers("/api/v1/library/my-workouts/**").hasRole("MEMBER")
+                        .requestMatchers("/api/v1/library/workout-exercises/**").hasRole("MEMBER")
+                        // ── Legacy library endpoints (/api/library/**) ────────────────
+                        // Chỉ các endpoint ĐỌC danh sách/đếm là công khai cho GUEST.
+                        // Endpoint ghi (POST /api/library/member-exercises) và endpoint
+                        // đọc chi tiết (/api/library/exercises/{id}) phải yêu cầu MEMBER —
+                        // nếu không, GUEST có thể tạo bài tập và đọc bài tập cá nhân
+                        // (kể cả bài đang chờ duyệt) của người khác.
+                        .requestMatchers(HttpMethod.GET, "/api/library/levels").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/library/summary").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/library/counts").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/library/exercises").permitAll()
+                        .requestMatchers("/api/library/member-exercises").hasRole("MEMBER")
+                        .requestMatchers("/api/library/exercises/**").hasRole("MEMBER")
+                        .requestMatchers("/api/member/form-rules/**").hasAnyRole("MEMBER", "CONTENT_MANAGER", "ADMIN")
+                        .anyRequest().authenticated())
+                .exceptionHandling(e -> e.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)));
+        http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+        http.addFilterAfter(new MaintenanceEnforcementFilter(maintenanceSchedules), JwtAuthFilter.class);
+        return http.build();
+    }
+
+    @Bean
+    PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration cfg = new CorsConfiguration();
+        cfg.setAllowedOriginPatterns(allowedOrigins);
+        cfg.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        cfg.setAllowedHeaders(List.of("*"));
+        cfg.setAllowCredentials(true);
+        UrlBasedCorsConfigurationSource src = new UrlBasedCorsConfigurationSource();
+        src.registerCorsConfiguration("/**", cfg);
+        return src;
+    }
+}

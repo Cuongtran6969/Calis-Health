@@ -1,0 +1,577 @@
+/* Topbar.css - Match Figma JSON exactly */
+:root {
+  /* ── Topbar ── */
+  --topbar-height: 56px;
+  --topbar-bg: #1A1230;
+  --topbar-border: #2D2550;
+  /* ── Sidebar ── */
+  --sidebar-width: 220px;
+  --sidebar-bg: #1A1230;
+  --sidebar-border: #2D2550;
+  --nav-text: #A89BD0;
+  --nav-text-active: #FFFFFF;
+  /* ── Shared ── */
+  --button-bg: #1A1230;
+  --button-border: #3B2A6B;
+  --text-white: #FFFFFF;
+  --gradient-icon: linear-gradient(135deg, #B44CFF 0%, #FF7799 100%);
+}
+
+/* ── Responsive topbar height ───────────────────────────────── */
+@media (max-width: 768px) {
+  :root { --topbar-height: 44px; }
+}
+
+@media (min-width: 769px) and (max-width: 1280px) {
+  :root { --topbar-height: 49px; }
+}
+
+@media (min-width: 1281px) {
+  :root { --topbar-height: 56px; }
+}
+
+.topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: var(--topbar-height);
+  /* Topbar needs explicit dark bg when parent is light */
+  background-color: #1A1230 !important;
+  border-bottom: 1px solid var(--topbar-border);
+  z-index: 1300;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  box-sizing: border-box;
+}
+
+.topbar-logo {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  text-decoration: none;
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+}
+
+.topbar-logo-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  background-color: var(--button-bg);
+  border: 1px solid var(--button-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.topbar-logo-icon svg {
+  font-size: 20px;
+  /* Gradient text via background-clip */
+  background: var(--gradient-icon);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.topbar-logo-text {
+  font-size: 16.8px;
+  font-weight: 800;
+  color: var(--text-white);
+  letter-spacing: -0.01em;
+  line-height: 21px;
+  white-space: nowrap;
+  margin-left: 10px;
+}
+
+.gradient-text {
+  font-size: 16.8px;
+  font-weight: 800;
+  background: linear-gradient(to right, #9d4edd, #ff007f);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.topbar-spacer {
+  flex: 1;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Streak badge */
+.topbar-streak {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 15px;
+  background: rgba(249, 115, 22, 0.14);
+  border: 1px solid rgba(249, 115, 22, 0.45);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.topbar-streak:hover {
+  background: rgba(249, 115, 22, 0.24);
+  border-color: rgba(249, 115, 22, 0.7);
+}
+
+.topbar-streak-icon {
+  font-size: 17px !important;
+  color: #FB923C;
+}
+
+.topbar-streak-days {
+  font-size: 12px;
+  font-weight: 700;
+  color: #FDBA74;
+  line-height: 17px;
+  white-space: nowrap;
+}
+
+/* Notification icon button */
+.topbar-icon-btn {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: transparent;
+  border: 1px solid transparent;
+  color: #B6A5D5;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.topbar-notification-wrap {
+  position: relative;
+}
+
+.topbar-notification-dot {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #F472B6;
+}
+
+.topbar-notification-badge {
+  position: absolute;
+  top: 0;
+  right: -3px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border: 1px solid #1A1230;
+  border-radius: 999px;
+  background: #F472B6;
+  color: #FFFFFF;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 15px;
+  text-align: center;
+}
+
+.topbar-icon-btn:hover {
+  background: #251A40;
+  border-color: var(--button-border);
+  color: #FFFFFF;
+}
+
+.topbar-icon-btn svg {
+  font-size: 20px;
+}
+
+/* User avatar */
+.topbar-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #8B5CF6 0%, #D946EF 100%);
+  border: 1px solid #3B2A6B;
+  color: #FFFFFF;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  user-select: none;
+  padding: 0;
+}
+
+.topbar-avatar-image {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+
+.topbar-login-btn {
+  width: 60px;
+  height: 30px;
+  border-radius: 12px;
+  background-color: var(--button-bg);
+  border: 1px solid var(--button-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  transition: all 0.15s ease;
+  color: inherit;
+  font: inherit;
+}
+
+.topbar-login-btn:hover {
+  background-color: #251A40;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.topbar-login-btn span {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-white);
+  line-height: 17px;
+}
+
+/* Logout button: same look as the Content Manager top bar (outlined, icon + label). */
+.topbar-logout-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-sizing: border-box;
+  padding: 4px 12px;
+  border: 1px solid rgba(160, 132, 255, 0.32);
+  border-radius: 12px;
+  background-color: rgba(139, 92, 246, 0.08);
+  color: #FFFFFF;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.75;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.topbar-logout-btn svg {
+  width: 16px;
+  height: 16px;
+  margin-left: -2px;
+}
+
+.topbar-logout-btn:hover {
+  border-color: #A78BFA;
+  background-color: rgba(139, 92, 246, 0.18);
+}
+
+.topbar-logout-btn:focus-visible {
+  outline: 2px solid #A78BFA;
+  outline-offset: 2px;
+}
+
+.topbar-popover {
+  position: absolute;
+  top: calc(var(--topbar-height) - 2px);
+  z-index: 1400;
+  width: min(310px, calc(100vw - 24px));
+  padding: 12px;
+  border: 1px solid var(--topbar-border);
+  border-radius: 14px;
+  background: #171126;
+  box-shadow: 0 16px 42px rgba(0, 0, 0, 0.45);
+  color: #FFFFFF;
+}
+
+.topbar-settings-popover {
+  top: calc(100% + 10px);
+  right: 16px;
+}
+
+.topbar-notification-popover {
+  top: calc(100% + 10px);
+  right: 0;
+}
+
+.topbar-popover-heading {
+  padding: 4px 8px 10px;
+  color: #FFFFFF;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.topbar-menu-item {
+  width: 100%;
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #D8CEEC;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+}
+
+.topbar-menu-item:hover {
+  background: #251A40;
+  color: #FFFFFF;
+}
+
+.topbar-menu-item svg {
+  font-size: 19px;
+  color: #A78BFA;
+}
+
+.topbar-language {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 50px;
+  padding: 6px 8px;
+  color: #D8CEEC;
+  font-size: 13px;
+}
+
+.topbar-language select {
+  max-width: 130px;
+  padding: 7px 8px;
+  border: 1px solid #3B2A6B;
+  border-radius: 8px;
+  background: #1A1230;
+  color: #FFFFFF;
+  font: inherit;
+}
+
+/*
+ * Language switcher in the top bar: a small VI / EN toggle. It is always visible, so a guest can
+ * switch the language too (a guest has no account menu to open).
+ */
+.topbar-lang {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 30px;
+  padding: 0 4px 0 8px;
+  border-radius: 15px;
+  background: rgba(139, 92, 246, 0.08);
+  border: 1px solid rgba(160, 132, 255, 0.32);
+}
+
+.topbar-lang-icon {
+  font-size: 16px !important;
+  color: #A78BFA;
+  margin-right: 2px;
+}
+
+.topbar-lang-option {
+  min-width: 30px;
+  height: 22px;
+  padding: 0 6px;
+  border: none;
+  border-radius: 11px;
+  background: transparent;
+  color: #B9A9D8;
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.topbar-lang-option:hover {
+  color: #FFFFFF;
+  background: rgba(160, 132, 255, 0.18);
+}
+
+.topbar-lang-option.is-active {
+  background: rgba(139, 92, 246, 0.55);
+  color: #FFFFFF;
+}
+
+.topbar-notification-item {
+  width: 100%;
+  display: flex;
+  gap: 10px;
+  padding: 10px 8px;
+  border-top: 1px solid rgba(168, 155, 208, 0.14);
+  border-right: 0;
+  border-bottom: 0;
+  border-left: 0;
+  background: transparent;
+  color: #FFFFFF;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+
+.topbar-notification-item:hover {
+  background: rgba(167, 139, 250, 0.08);
+}
+
+.topbar-notification-item.is-read {
+  opacity: 0.72;
+}
+
+.topbar-notification-content {
+  display: block;
+  min-width: 0;
+}
+
+.topbar-notification-mark {
+  flex: 0 0 8px;
+  width: 8px;
+  height: 8px;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: #A78BFA;
+}
+
+.topbar-notification-item strong {
+  display: block;
+  font-size: 12.5px;
+}
+
+.topbar-notification-message {
+  display: block;
+  margin: 4px 0;
+  color: #A89BD0;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.topbar-notification-item time {
+  display: block;
+  margin-top: 5px;
+  color: #776B99;
+  font-size: 11px;
+}
+
+.topbar-notification-empty {
+  margin: 0;
+  padding: 10px 8px;
+  color: #A89BD0;
+  font-size: 12px;
+}
+
+.topbar-notification-empty p {
+  margin: 0 0 8px;
+}
+
+.topbar-notification-retry {
+  padding: 5px 10px;
+  border: 1px solid #62518F;
+  border-radius: 6px;
+  background: #1B1830;
+  color: #E5DDF7;
+  cursor: pointer;
+  font: inherit;
+}
+
+.topbar-notification-retry:hover:not(:disabled) {
+  background: #292243;
+}
+
+.topbar-notification-retry:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+@media (max-width: 768px) {
+  .topbar {
+    padding: 0 12px;
+  }
+
+  .topbar-right {
+    gap: 7px;
+  }
+
+  .topbar-logo-text,
+  .gradient-text {
+    font-size: 14px;
+  }
+
+  .topbar-logo-icon {
+    width: 30px;
+    height: 30px;
+  }
+
+  .topbar-streak {
+    height: 28px;
+    padding: 0 8px;
+  }
+
+  .topbar-streak-days {
+    font-size: 11px;
+  }
+
+  .topbar-avatar {
+    width: 30px;
+    height: 30px;
+    font-size: 11px;
+  }
+
+  .topbar-login-btn {
+    width: 52px;
+    height: 28px;
+  }
+
+  .topbar-login-btn span {
+    font-size: 11px;
+  }
+
+  .topbar-lang {
+    height: 28px;
+    padding: 0 3px 0 6px;
+  }
+
+  .topbar-lang-icon {
+    font-size: 14px !important;
+  }
+
+  .topbar-lang-option {
+    min-width: 26px;
+    height: 20px;
+    padding: 0 4px;
+    font-size: 10.5px;
+  }
+
+  .topbar-settings-popover {
+    right: 12px;
+  }
+}
+
+@media (max-width: 420px) {
+  .topbar-logo-text,
+  .gradient-text {
+    display: none;
+  }
+
+  .topbar-login-btn {
+    width: 48px;
+  }
+}

@@ -1,0 +1,358 @@
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
+import { useTranslation } from "react-i18next";
+import "react-toastify/dist/ReactToastify.css";
+import AdminLayout from "./components/layout/AdminLayout";
+import RoleHomeRoute from "./components/RoleHomeRoute";
+import ContentManagerLayout from "./components/layout/ContentManagerLayout";
+import AdminAreaLayout from "./components/layout/AdminAreaLayout";
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminUsersPage from "./pages/AdminUsersPage";
+import AdminCreateStaffPage from "./pages/AdminCreateStaffPage";
+import AdminUserDetailPage from "./pages/AdminUserDetailPage";
+import AdminStoragePage from "./pages/AdminStoragePage";
+import StorageCapacityTab from "./pages/storage/StorageCapacityTab";
+import MediaCleanupTab from "./pages/storage/MediaCleanupTab";
+import UploadLimitsTab from "./pages/storage/UploadLimitsTab";
+import HealthTracking from "./pages/HealthTracking";
+import WorkoutHistory from "./pages/WorkoutHistory";
+import PerformanceAnalytics from "./pages/PerformanceAnalytics";
+import DayStreak from "./pages/DayStreak";
+import DailyWorkoutPlan from "./pages/DailyWorkoutPlan";
+import MemberSchedulePage from "./pages/MemberSchedulePage";
+import PreviewTrainingPlanPage from "./pages/PreviewTrainingPlanPage";
+import ExerciseDetailPreview from "./pages/ExerciseDetailPreview";
+import PoseTrackingPage from "./pages/PoseTrackingPage";
+import RestCountdownPage from "./pages/RestCountdownPage";
+import VideoScanPage from "./pages/VideoScanPage";
+import ExerciseResultPage from "./pages/ExerciseResultPage";
+import FormCorrectionPage from "./pages/FormCorrectionPage";
+import Library from "./pages/Library";
+import LibraryExerciseListPage from "./pages/LibraryExerciseListPage";
+import ExerciseDetailPage from "./pages/ExerciseDetailPage";
+import CommunityExerciseListPage from "./pages/CommunityExerciseListPage";
+import CreatePersonalExercisePage from "./pages/CreatePersonalExercisePage";
+import UpdatePersonalExercisePage from "./pages/UpdatePersonalExercisePage";
+import MyExerciseListPage from "./pages/MyExerciseListPage";
+import CalisthenicsExerciseTreePage from "./pages/CalisthenicsExerciseTreePage";
+import CustomWorkoutListPage from "./pages/CustomWorkoutListPage";
+import CustomWorkoutDetailPage from "./pages/CustomWorkoutDetailPage";
+import CreatePersonalWorkoutPage from "./pages/CreatePersonalWorkoutPage";
+import MyCustomWorkoutListPage from "./pages/MyCustomWorkoutListPage";
+import UpdateMyCustomWorkoutPage from "./pages/UpdateMyCustomWorkoutPage";
+import WorkoutSystemListPage from "./pages/WorkoutSystemListPage";
+import SystemWorkoutDetailPage from "./pages/SystemWorkoutDetailPage";
+import FavoritesPage from "./pages/FavoritesPage";
+import MemberFeedbackListPage from "./pages/MemberFeedbackListPage";
+import MemberFeedbackCreatePage from "./pages/MemberFeedbackCreatePage";
+import ContentFeedbackPage from "./pages/ContentFeedbackPage";
+import ContentFeedbackDetailPage from "./pages/ContentFeedbackDetailPage";
+import AdminFeedbackPage from "./pages/AdminFeedbackPage";
+import AdminFeedbackDetailPage from "./pages/AdminFeedbackDetailPage";
+import { FavoritesProvider } from "./context/FavoritesContext";
+import ProtectedRoute from "./components/ProtectedRoute";
+import GuestBlockedRoute from "./components/GuestBlockedRoute";
+import LibraryRoute from "./components/LibraryRoute";
+import ContentManagerDashboard from "./pages/ContentManagerDashboard";
+import ExerciseTreePage from "./pages/ExerciseTreePage";
+import DailyPlanTemplateListPage from "./pages/DailyPlanTemplateListPage";
+import DailyPlanTemplateBuilderPage from "./pages/DailyPlanTemplateBuilderPage";
+import DailyPlanTemplateDetailPage from "./pages/DailyPlanTemplateDetailPage";
+import ProgressionRulesPage, {
+  ProgressionRuleDetailPage,
+  ProgressionRuleFormPage,
+} from "./pages/ProgressionRulesPage";
+import ExerciseListPage from "./pages/ExerciseListPage";
+import SystemExerciseDetailPage from "./pages/SystemExerciseDetailPage";
+import ExerciseFormPage from "./pages/ExerciseFormPage";
+import WorkoutListPage from "./pages/WorkoutListPage";
+import WorkoutDetailPage from "./pages/WorkoutDetailPage";
+import PendingModerationPage from "./pages/PendingModerationPage";
+import ExerciseModerationDetailPage from "./pages/ExerciseModerationDetailPage";
+import ExerciseApprovalHistoryPage from "./pages/ExerciseApprovalHistoryPage";
+import LevelBenchmarkCriteriaPage, {
+  LevelBenchmarkDetailPage,
+  LevelBenchmarkFormPage,
+} from "./pages/LevelBenchmarkCriteriaPage";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
+import VerifyEmail from "./pages/VerifyEmail";
+import VerifyResetPassword from "./pages/VerifyResetPassword";
+import ResetPassword from "./pages/ResetPassword";
+import NotificationListPage from "./pages/NotificationListPage";
+import CreateNotificationPage from "./pages/CreateNotificationPage";
+import NotificationDetailPage from "./pages/NotificationDetailPage";
+import CreateMaintenanceSchedulePage from "./pages/CreateMaintenanceSchedulePage";
+import MaintenanceScheduleListPage from "./pages/MaintenanceScheduleListPage";
+import MaintenanceScheduleDetailPage from "./pages/MaintenanceScheduleDetailPage";
+import ChangePassword from "./pages/ChangePassword";
+import ProfilePage from "./pages/ProfilePage";
+import SurveyFlow, { SurveyEntry } from "./pages/survey/SurveyFlow";
+import SurveyStepPage from "./pages/survey/SurveyStepPage";
+import SurveyResult from "./pages/survey/SurveyResult";
+import LeaderboardPage from "./pages/LeaderboardPage";
+import SurveyManagement from "./pages/content/SurveyManagement";
+import { ContentManagementPage } from "./features/content-manager/pages/ContentManagementPage";
+
+export default function App() {
+  const { t } = useTranslation();
+  const memberPage = (page) => (
+    <ProtectedRoute>
+      <AdminLayout>{page}</AdminLayout>
+    </ProtectedRoute>
+  );
+  // ── Library: GUEST (chưa đăng nhập) cũng xem được trang tổng quan và các
+  // trang DANH SÁCH bài tập / workout hệ thống. Bấm vào XEM CHI TIẾT thì bị
+  // chặn và yêu cầu đăng nhập (xem `guestBlockedPage`).
+  const libraryPage = (page) => (
+    <LibraryRoute>
+      <AdminLayout>{page}</AdminLayout>
+    </LibraryRoute>
+  );
+  // Trang CHỈ MEMBER mới xem được chi tiết: guest bị chặn và mời đăng nhập.
+  const guestBlockedPage = (page) => (
+    <GuestBlockedRoute>
+      <AdminLayout>{page}</AdminLayout>
+    </GuestBlockedRoute>
+  );
+  return (
+    <>
+      <ToastContainer
+        position="top-right"
+        newestOnTop
+        theme="dark"
+        toastClassName="!rounded-xl !border !border-[#3c3063] !bg-[#1a1438] !text-slate-200 !shadow-2xl"
+        className="!top-0 !right-0 !z-[9999]"
+      />
+      <FavoritesProvider>
+        <BrowserRouter>
+          <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/verify-reset-password" element={<VerifyResetPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/change-password" element={<ChangePassword />} />
+
+          <Route path="/" element={<RoleHomeRoute />} />
+          <Route path="/dashboard" element={<Navigate to="/" replace />} />
+          <Route path="/day-streak" element={memberPage(<DayStreak />)} />
+          <Route path="/leaderboard" element={memberPage(<LeaderboardPage />)} />
+          {/* Onboarding survey của member (sau khi đăng nhập); URL theo Figma: /survey/body-information … */}
+          <Route
+            path="/survey"
+            element={
+              <ProtectedRoute>
+                <SurveyFlow />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<SurveyEntry />} />
+            <Route path=":stepSlug" element={<SurveyStepPage />} />
+          </Route>
+          <Route
+            path="/survey/result"
+            element={
+              <ProtectedRoute>
+                <SurveyResult />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route path="/content" element={<ContentManagerLayout />}>
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<ContentManagerDashboard />} />
+          <Route path="management/:section" element={<ContentManagementPage />} />
+          <Route path="daily-training-plans" element={<DailyPlanTemplateListPage />} />
+          <Route path="daily-training-plans/new" element={<DailyPlanTemplateBuilderPage />} />
+          <Route path="daily-training-plans/:code" element={<DailyPlanTemplateDetailPage />} />
+          <Route path="daily-training-plans/:code/edit" element={<DailyPlanTemplateBuilderPage />} />
+          {/* Old Workout Templates URL */}
+          <Route path="workout-templates" element={<Navigate to="/content/daily-training-plans" replace />} />
+          {/* Survey Management moved to the Admin area */}
+          <Route path="surveys" element={<Navigate to="/admin/surveys" replace />} />
+          {/* Legacy Survey Management URLs */}
+          <Route path="survey" element={<Navigate to="/admin/surveys" replace />} />
+          <Route path="exercises" element={<ExerciseListPage />} />
+          <Route path="progression-rules" element={<ProgressionRulesPage />} />
+          <Route path="progression-rules/tree" element={<ExerciseTreePage />} />
+          <Route path="progression-rules/new" element={<ProgressionRuleFormPage />} />
+          <Route path="progression-rules/:id/edit" element={<ProgressionRuleFormPage />} />
+          <Route path="progression-rules/:id" element={<ProgressionRuleDetailPage />} />
+          <Route path="benchmark-criteria" element={<LevelBenchmarkCriteriaPage />} />
+          <Route path="benchmark-criteria/edit" element={<LevelBenchmarkFormPage />} />
+          <Route path="benchmark-criteria/:id/edit" element={<LevelBenchmarkFormPage />} />
+          <Route path="benchmark-criteria/:id" element={<LevelBenchmarkDetailPage />} />
+          <Route path="exercises/pending-moderation" element={<PendingModerationPage />} />
+          <Route path="exercises/approval-history" element={<ExerciseApprovalHistoryPage />} />
+          <Route path="exercises/moderation/:code" element={<ExerciseModerationDetailPage />} />
+          <Route path="exercises/:code" element={<SystemExerciseDetailPage />} />
+          <Route path="workouts" element={<WorkoutListPage />} />
+          <Route path="workouts/:code" element={<WorkoutDetailPage />} />
+          <Route path="create" element={<ExerciseFormPage />} />
+          <Route path="library" element={<Navigate to="/content/exercises" replace />} />
+          <Route path="profile" element={<ProfilePage />} />
+          <Route path="feedback" element={<ContentFeedbackPage />} />
+          <Route path="feedback/:id" element={<ContentFeedbackDetailPage />} />
+          <Route path="*" element={<Navigate to="/content/dashboard" replace />} />
+        </Route>
+
+        {/* ── Library ────────────────────────────────────────────────────────
+            Mở cho GUEST: xem tổng quan + danh sách bài tập / workout hệ thống.
+            CHỈ các trang CHI TIẾT mới yêu cầu đăng nhập (guestBlockedPage). */}
+        <Route path="/library" element={libraryPage(<Library />)} />
+        <Route path="/library/exercises" element={libraryPage(<LibraryExerciseListPage />)} />
+        <Route path="/library/exercises/:tab" element={libraryPage(<LibraryExerciseListPage />)} />
+        <Route path="/library/workouts/system" element={libraryPage(<WorkoutSystemListPage />)} />
+        <Route path="/library/workouts/health" element={libraryPage(<WorkoutSystemListPage />)} />
+        <Route path="/library/workouts/skill" element={libraryPage(<WorkoutSystemListPage />)} />
+        {/* Chi tiết bài tập hệ thống — guest bị chặn, phải đăng nhập. */}
+        <Route path="/library/exercises/system/:exerciseId" element={guestBlockedPage(<ExerciseDetailPage />)} />
+        <Route path="/library/exercise/:id" element={guestBlockedPage(<ExerciseDetailPage />)} />
+        {/* Chi tiết workout hệ thống — guest bị chặn, phải đăng nhập. */}
+        <Route path="/library/workouts/system/:workoutId" element={guestBlockedPage(<SystemWorkoutDetailPage />)} />
+        <Route path="/library/system-workouts/:id" element={guestBlockedPage(<SystemWorkoutDetailPage />)} />
+
+        <Route path="/library/exercises/member" element={memberPage(<CommunityExerciseListPage />)} />
+        <Route path="/library/community" element={memberPage(<CommunityExerciseListPage />)} />
+        <Route path="/library/member-exercises" element={memberPage(<CommunityExerciseListPage />)} />
+        <Route path="/library/community/:id" element={memberPage(<ExerciseDetailPage />)} />
+        <Route path="/library/member/:id" element={memberPage(<ExerciseDetailPage />)} />
+        <Route path="/library/personal" element={memberPage(<MyExerciseListPage />)} />
+        <Route path="/library/personal/new" element={memberPage(<CreatePersonalExercisePage />)} />
+        <Route path="/library/personal/:id/edit" element={memberPage(<UpdatePersonalExercisePage />)} />
+        <Route path="/library/personal-exercises" element={memberPage(<MyExerciseListPage />)} />
+        <Route path="/library/personal-exercises/new" element={memberPage(<CreatePersonalExercisePage />)} />
+        <Route path="/library/personal-exercises/:id/edit" element={memberPage(<UpdatePersonalExercisePage />)} />
+        <Route path="/library/workouts" element={memberPage(<MyCustomWorkoutListPage />)} />
+        <Route path="/library/workouts/new" element={memberPage(<CreatePersonalWorkoutPage />)} />
+        <Route path="/library/workouts/:id/edit" element={memberPage(<UpdateMyCustomWorkoutPage />)} />
+        <Route path="/library/custom" element={memberPage(<CustomWorkoutListPage />)} />
+        <Route path="/library/custom/new" element={memberPage(<CreatePersonalWorkoutPage />)} />
+        <Route path="/library/custom/my" element={memberPage(<MyCustomWorkoutListPage />)} />
+        <Route path="/library/custom/:id" element={memberPage(<CustomWorkoutDetailPage />)} />
+        <Route path="/library/custom-workouts" element={<Navigate to="/library/custom" replace />} />
+        <Route path="/library/custom-workouts/:id" element={memberPage(<CustomWorkoutDetailPage />)} />
+        <Route path="/library/skills/tree" element={memberPage(<CalisthenicsExerciseTreePage />)} />
+        <Route path="/library/favorites" element={memberPage(<FavoritesPage />)} />
+        <Route path="/favorites" element={memberPage(<FavoritesPage />)} />
+        <Route path="/library/feedback" element={memberPage(<MemberFeedbackListPage />)} />
+        <Route path="/library/feedback/new" element={memberPage(<MemberFeedbackCreatePage />)} />
+        <Route path="/feedback" element={memberPage(<MemberFeedbackListPage />)} />
+        <Route path="/feedback/new" element={memberPage(<MemberFeedbackCreatePage />)} />
+        <Route path="/explore" element={memberPage(<CalisthenicsExerciseTreePage />)} />
+
+        {/* Admin area (role ADMIN) - the guard reads /auth/me, same pattern as /content. */}
+        <Route path="/admin" element={<AdminAreaLayout />}>
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<AdminDashboard />} />
+          <Route path="users" element={<AdminUsersPage />} />
+          <Route path="users/create" element={<AdminCreateStaffPage />} />
+          <Route path="users/:id" element={<AdminUserDetailPage />} />
+          <Route path="surveys" element={<SurveyManagement />} />
+          <Route path="create" element={<Navigate to="/admin/users/create" replace />} />
+          <Route path="notifications" element={<NotificationListPage />} />
+          <Route path="notifications/new" element={<CreateNotificationPage />} />
+          <Route path="notifications/:id" element={<NotificationDetailPage />} />
+          <Route path="storage" element={<AdminStoragePage />}>
+            <Route index element={<StorageCapacityTab />} />
+            <Route path="cleanup" element={<MediaCleanupTab />} />
+            <Route path="settings" element={<UploadLimitsTab />} />
+            <Route path="*" element={<Navigate to="/admin/storage" replace />} />
+          </Route>
+          <Route path="maintenance" element={<MaintenanceScheduleListPage />} />
+          <Route path="maintenance/create" element={<CreateMaintenanceSchedulePage />} />
+          <Route path="maintenance/:id" element={<MaintenanceScheduleDetailPage />} />
+          <Route path="feedback" element={<AdminFeedbackPage />} />
+          <Route path="feedback/:id" element={<AdminFeedbackDetailPage />} />
+          <Route path="profile" element={<ProfilePage />} />
+          <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
+        </Route>
+
+        {/* Member daily training flow: schedule → preview → daily plan → exercise detail */}
+        <Route path="/plan" element={memberPage(<DailyWorkoutPlan />)} />
+        <Route path="/schedule" element={memberPage(<MemberSchedulePage />)} />
+        <Route path="/schedule/preview" element={memberPage(<PreviewTrainingPlanPage />)} />
+        <Route path="/exercises/:code" element={memberPage(<ExerciseDetailPreview />)} />
+        {/* Real-time AI Pose Tracking — mở sau khi member bấm "Ready · Start counting".
+            Màn này fullscreen nên không dùng layout sidebar của member. */}
+        <Route
+          path="/session/tracking"
+          element={
+            <ProtectedRoute>
+              <PoseTrackingPage />
+            </ProtectedRoute>
+          }
+        />
+        {/* Đếm ngược nghỉ giữa các set — mở từ nút "Continue" của màn tracking. */}
+        <Route
+          path="/session/rest"
+          element={
+            <ProtectedRoute>
+              <RestCountdownPage />
+            </ProtectedRoute>
+          }
+        />
+        {/* Quét video để chấm điểm — mở từ nút "Browse file" ở màn exercise detail.
+            Màn này fullscreen nên không dùng layout sidebar của member. */}
+        <Route
+          path="/session/scan"
+          element={
+            <ProtectedRoute>
+              <VideoScanPage />
+            </ProtectedRoute>
+          }
+        />
+        {/* Kết quả CUỐI CÙNG của buổi tập — mở khi bấm "Finish workout" ở bài
+            cuối, hoặc sau khi hệ thống quét xong video member đẩy lên. */}
+        <Route
+          path="/session/result"
+          element={
+            <ProtectedRoute>
+              <ExerciseResultPage />
+            </ProtectedRoute>
+          }
+        />
+        {/* Form correction — mở từ nút "View form correction" ở màn kết quả. */}
+        <Route
+          path="/session/correction"
+          element={
+            <ProtectedRoute>
+              <FormCorrectionPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/tracking"
+          element={memberPage(<HealthTracking />)}
+        />
+        <Route
+          path="/tracking/workout-history"
+          element={memberPage(<WorkoutHistory />)}
+        />
+        <Route
+          path="/tracking/assessment"
+          element={memberPage(<PerformanceAnalytics />)}
+        />
+        {/* Profile of a MEMBER (CONTENT_MANAGER and ADMIN have /content/profile and /admin/profile). */}
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <AdminLayout>
+                <ProfilePage />
+              </AdminLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/settings" element={<Navigate to="/" replace />} />
+
+        <Route path="*" element={<Navigate to="/login" replace />} />
+          </Routes>
+        </BrowserRouter>
+      </FavoritesProvider>
+    </>
+  );
+}

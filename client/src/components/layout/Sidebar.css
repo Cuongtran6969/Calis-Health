@@ -1,0 +1,70 @@
+/* Sidebar.css — Matching Figma screenshot */
+
+.sidebar {
+  position: fixed;
+  top: var(--topbar-height);
+  left: 0;
+  width: var(--sidebar-width);
+  min-height: calc(100vh - var(--topbar-height));
+  background-color: var(--sidebar-bg);
+  border-right: 1px solid var(--sidebar-border);
+  z-index: 1200;
+  display: flex;
+  flex-direction: column;
+  padding-top: 12px;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0 10px;
+}
+
+.sidebar-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  color: var(--nav-text);
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+  text-decoration: none;
+}
+
+.sidebar-nav-item:hover {
+  color: #ffffff;
+  background-color: #171135;
+}
+
+.sidebar-nav-item.active {
+  background-color: #2e1f68;
+  border-color: #5b3ce8;
+  color: #ffffff;
+}
+
+.sidebar-nav-item.active svg path,
+.sidebar-nav-item.active svg circle,
+.sidebar-nav-item.active svg polygon {
+  stroke: #c4b5fd;
+  fill: #c4b5fd;
+}
+
+.sidebar-nav-item svg {
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
+}
+
+.sidebar-nav-item span {
+  font-size: 13.5px;
+  font-weight: 500;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.sidebar-nav-item.active span {
+  font-weight: 600;
+}

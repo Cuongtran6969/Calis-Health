@@ -1,0 +1,295 @@
+import axios from "axios";
+import i18n from "../i18n";
+import { handleMaintenanceError } from "../utils/maintenanceNotifications";
+import {
+  messageFromPayload as sharedMessageFromPayload,
+  statusMessage as sharedStatusMessage,
+} from "../utils/apiError";
+
+/**
+ * API client riêng cho khu Content Manager. Không tự đăng xuất khi nhận 401
+ * để giữ nguyên form hiện tại trong lúc xử lý lỗi xác thực.
+ */
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
+
+const contentApi = axios.create({
+  baseURL: API_URL,
+  headers: { Accept: "application/json" },
+});
+
+contentApi.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
+contentApi.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    handleMaintenanceError(error);
+    return Promise.reject(error);
+  },
+);
+
+/** Media (video/anatomy) được backend phục vụ ở origin gốc, không kèm /api. */
+export function mediaUrl(value) {
+  if (!value) return null;
+  try {
+    return new URL(value, new URL(API_URL, window.location.origin)).toString();
+  } catch {
+    return value;
+  }
+}
+
+export class ApiRequestError extends Error {
+  constructor(message, status) {
+    super(message);
+    this.name = "ApiRequestError";
+    this.status = status;
+  }
+}
+
+function messageFromPayload(payload) {
+  return sharedMessageFromPayload(payload);
+}
+
+function statusMessage(status) {
+  return sharedStatusMessage(status);
+}
+export function requestError(error) {
+  if (error instanceof ApiRequestError) return error;
+  if (axios.isAxiosError(error)) {
+    const status = error.response?.status;
+    const message = messageFromPayload(error.response?.data) || statusMessage(status);
+    return new ApiRequestError(message, status);
+  }
+  return new ApiRequestError(
+    error instanceof Error ? error.message : i18n.t("common.apiError.sendFailed"),
+  );
+}
+
+export const contentManagerApi = {
+  exercises: () => contentApi.get("/content/exercises").then((r) => r.data),
+
+  levelBenchmarkConfiguration: () =>
+    contentApi.get("/content/level-benchmarks").then((r) => r.data).catch((error) => { throw requestError(error); }),
+
+  updateLevelBenchmarkConfiguration: (data) =>
+    contentApi.put("/content/level-benchmarks", data).then((r) => r.data).catch((error) => { throw requestError(error); }),
+
+  deleteLevelBenchmark: (id) =>
+    contentApi.delete(`/content/level-benchmarks/levels/${encodeURIComponent(id)}`).then((r) => r.data).catch((error) => { throw requestError(error); }),
+
+  updateLevelBenchmarkStatus: (level, status) =>
+    contentApi.patch(`/content/level-benchmarks/levels/${encodeURIComponent(level)}/status`, null, { params: { status } })
+      .then((r) => r.data).catch((error) => { throw requestError(error); }),
+
+  memberLevels: () => contentApi.get("/content/dashboard/member-levels").then((r) => r.data),
+
+  progressionRules: () =>
+    contentApi.get("/content/progression-rules").then((r) => r.data).catch((error) => { throw requestError(error); }),
+
+  progressionTree: () =>
+    contentApi.get("/content/progression-rules/tree").then((r) => r.data).catch((error) => { throw requestError(error); }),
+
+  progressionRule: (id) =>
+    contentApi.get(`/content/progression-rules/${encodeURIComponent(id)}`).then((r) => r.data).catch((error) => { throw requestError(error); }),
+
+  createProgressionRule: (data) =>
+    contentApi.post("/content/progression-rules", data).then((r) => r.data).catch((error) => { throw requestError(error); }),
+
+  updateProgressionRule: (id, data) =>
+    contentApi.put(`/content/progression-rules/${encodeURIComponent(id)}`, data).then((r) => r.data).catch((error) => { throw requestError(error); }),
+
+  updateProgressionRuleStatus: (id, status) =>
+    contentApi.patch(`/content/progression-rules/${encodeURIComponent(id)}/status`, null, { params: { status } })
+      .then((r) => r.data).catch((error) => { throw requestError(error); }),
+
+  deleteProgressionRule: (id) =>
+    contentApi.delete(`/content/progression-rules/${encodeURIComponent(id)}`).catch((error) => { throw requestError(error); }),
+
+  exercise: (code) =>
+    contentApi.get(`/content/exercises/${encodeURIComponent(code)}`).then((r) => r.data),
+
+  exercisesByCodes: (codes) => Promise.all(
+    [...new Set(codes.filter(Boolean))].map((code) =>
+      contentApi
+        .get(`/content/exercises/${encodeURIComponent(code)}`)
+        .then((response) => response.data)
+        .catch(() => null),
+    ),
+  ),
+
+  /**
+   * Tạo exercise/skill: backend nhận multipart với part "data" (JSON) và 2 part
+   * file tuỳ chọn.
+   */
+  createExercise: (data, demoVideo, anatomyImage) => {
+    const form = new FormData();
+    form.append("data", new Blob([JSON.stringify(data)], { type: "application/json" }));
+    if (demoVideo) form.append("demoVideo", demoVideo);
+    if (anatomyImage) form.append("anatomyImage", anatomyImage);
+
+    if (!localStorage.getItem("token")) {
+      return Promise.reject(
+        new ApiRequestError(i18n.t("common.apiError.notSignedIn"), 401),
+      );
+    }
+
+    return contentApi
+      .post("/content/exercises", form)
+      .then((r) => r.data)
+      .catch((error) => {
+        throw requestError(error);
+      });
+  },
+
+  updateExercise: (code, data, demoVideo, anatomyImage) => {
+    const form = new FormData();
+    form.append("data", new Blob([JSON.stringify(data)], { type: "application/json" }));
+    if (demoVideo) form.append("demoVideo", demoVideo);
+    if (anatomyImage) form.append("anatomyImage", anatomyImage);
+    if (!localStorage.getItem("token")) {
+      return Promise.reject(
+        new ApiRequestError(i18n.t("common.apiError.noToken"), 401),
+      );
+    }
+    return contentApi
+      .put(`/content/exercises/${encodeURIComponent(code)}`, form)
+      .then((r) => r.data)
+      .catch((error) => { throw requestError(error); });
+  },
+
+  updateExerciseStatus: (code, active, rejectionReason = null) =>
+    contentApi
+      .patch(`/content/exercises/${encodeURIComponent(code)}/status`, { active, rejectionReason })
+      .then((r) => r.data)
+      .catch((error) => { throw requestError(error); }),
+
+  deleteExercise: (code) =>
+    contentApi
+      .delete(`/content/exercises/${encodeURIComponent(code)}`)
+      .catch((error) => { throw requestError(error); }),
+
+  /**
+   * Chỉ bài tập do người dùng tạo (CUSTOM) chưa được duyệt mới nằm trong hàng chờ.
+   * Dùng danh sách hiện có vì backend chưa có endpoint moderation riêng.
+   */
+  pendingExercises: () => contentApi.get("/content/exercises/pending-moderation").then((r) => r.data),
+
+  exerciseApprovalHistory: () => contentApi.get("/content/exercises/approval-history").then((r) => r.data),
+
+  workouts: () => contentApi.get("/content/workouts").then((r) => r.data),
+
+  updateWorkoutStatus: (code, active) =>
+    contentApi
+      .patch(`/content/workouts/${encodeURIComponent(code)}/status`, { active })
+      .then((r) => r.data)
+      .catch((error) => { throw requestError(error); }),
+
+  deleteWorkout: (code) =>
+    contentApi
+      .delete(`/content/workouts/${encodeURIComponent(code)}`)
+      .catch((error) => { throw requestError(error); }),
+
+  workout: (code) =>
+    contentApi.get(`/content/workouts/${encodeURIComponent(code)}`).then((r) => r.data),
+
+  createWorkout: (data) =>
+    contentApi
+      .post("/content/workouts", data)
+      .then((r) => r.data)
+      .catch((error) => {
+        throw requestError(error);
+      }),
+
+  updateWorkout: (code, data) =>
+    contentApi
+      .put(`/content/workouts/${encodeURIComponent(code)}`, data)
+      .then((r) => r.data)
+      .catch((error) => { throw requestError(error); }),
+
+  cloneWorkout: (code, data) =>
+    contentApi.post(`/content/workouts/${encodeURIComponent(code)}/clone`, data)
+      .then((r) => r.data).catch((error) => { throw requestError(error); }),
+
+  quickUpdateWorkout: (code, data) =>
+    contentApi.patch(`/content/workouts/${encodeURIComponent(code)}/quick-update`, data)
+      .then((r) => r.data).catch((error) => { throw requestError(error); }),
+
+  /** Daily Training Plan Templates: existing workouts scheduled on training days. */
+  dailyPlanTemplates: () =>
+    contentApi.get("/content/daily-plan-templates").then((r) => r.data)
+      .catch((error) => { throw requestError(error); }),
+
+  dailyPlanTemplate: (code) =>
+    contentApi.get(`/content/daily-plan-templates/${encodeURIComponent(code)}`).then((r) => r.data)
+      .catch((error) => { throw requestError(error); }),
+
+  createDailyPlanTemplate: (data) =>
+    contentApi.post("/content/daily-plan-templates", data)
+      .then((r) => r.data).catch((error) => { throw requestError(error); }),
+
+  updateDailyPlanTemplate: (code, data) =>
+    contentApi.put(`/content/daily-plan-templates/${encodeURIComponent(code)}`, data)
+      .then((r) => r.data).catch((error) => { throw requestError(error); }),
+
+  updateDailyPlanTemplateStatus: (code, active) =>
+    contentApi.patch(`/content/daily-plan-templates/${encodeURIComponent(code)}/status`, { active })
+      .then((r) => r.data).catch((error) => { throw requestError(error); }),
+
+  deleteDailyPlanTemplate: (code) =>
+    contentApi.delete(`/content/daily-plan-templates/${encodeURIComponent(code)}`)
+      .catch((error) => { throw requestError(error); }),
+
+  // ---- Góp ý & khiếu nại của Member ----
+  /**
+   * Danh sách đơn góp ý.
+   *
+   * @param {object} filters
+   * @param {string} [filters.status] lọc theo trạng thái
+   * @param {string} [filters.category] lọc theo nhóm nội dung
+   * @param {string} [filters.search] tìm theo tên/email thành viên hoặc tiêu đề/nội dung
+   * @param {string} [filters.fromDate] ngày gửi bắt đầu (yyyy-MM-dd)
+   * @param {string} [filters.toDate] ngày gửi kết thúc (yyyy-MM-dd)
+   */
+  feedback: (filters = {}) =>
+    contentApi
+      .get("/content/feedback", {
+        params: {
+          status: filters.status || undefined,
+          category: filters.category || undefined,
+          search: filters.search || undefined,
+          fromDate: filters.fromDate || undefined,
+          toDate: filters.toDate || undefined,
+        },
+      })
+      .then((r) => r.data)
+      .catch((error) => { throw requestError(error); }),
+
+  /** Chi tiết một đơn góp ý. */
+  feedbackDetail: (id) =>
+    contentApi
+      .get(`/content/feedback/${encodeURIComponent(id)}`)
+      .then((r) => r.data)
+      .catch((error) => { throw requestError(error); }),
+
+  /** Content Manager nhận việc xử lý một đơn. */
+  takeFeedback: (id) =>
+    contentApi
+      .patch(`/content/feedback/${encodeURIComponent(id)}/take`)
+      .then((r) => r.data)
+      .catch((error) => { throw requestError(error); }),
+
+  /** Xử lý đơn: APPROVE (tự giải quyết) | ESCALATE (chuyển lên Admin) | REJECT. */
+  handleFeedback: (id, action, resolutionNote) =>
+    contentApi
+      .patch(`/content/feedback/${encodeURIComponent(id)}/handle`, {
+        action,
+        resolutionNote: resolutionNote || null,
+      })
+      .then((r) => r.data)
+      .catch((error) => { throw requestError(error); }),
+};
+
+export default contentApi;
